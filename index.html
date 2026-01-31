@@ -195,20 +195,53 @@
         }
     }
 
-    function exportAsImage() {
-        showToast("正在產生圖片...", 0);
-        const grid = document.getElementById('deckGrid');
-        const timeout = setTimeout(() => { document.getElementById('toast').style.display='none'; alert("產圖超時，請檢查圖片網址或長按圖片儲存"); }, 10000);
+function exportAsImage() {
+    showToast("正在產生完整圖片...", 0);
+    const grid = document.getElementById('deckGrid');
 
-        html2canvas(grid, { useCORS: true, scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
-            clearTimeout(timeout);
-            const a = document.createElement('a');
-            a.download = 'hq_deck.png'; a.href = canvas.toDataURL("image/png"); a.click();
-            showToast("圖片下載完成");
-        }).catch(() => { clearTimeout(timeout); showToast("產圖失敗"); });
-    }
+    // 1. 取得物件實際的總寬度與總高度 (不受螢幕限制)
+    const width = grid.scrollWidth;
+    const height = grid.scrollHeight;
+
+    // 2. 使用更嚴謹的參數執行 html2canvas
+    html2canvas(grid, {
+        useCORS: true,
+        scale: 2,           // 保持高解析度
+        backgroundColor: "#ffffff",
+        width: width,       // 強制設定擷取寬度為物件總寬
+        height: height,     // 強制設定擷取高度為物件總高
+        windowWidth: width, // 模擬視窗寬度
+        windowHeight: height, // 模擬視窗高度
+        x: 0,               // 從左上角座標 0 開始
+        y: 0,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+            // 在複製品中確保 grid 是展開的，防止被 CSS 限制
+            const clonedGrid = clonedDoc.getElementById('deckGrid');
+            clonedGrid.style.width = width + 'px';
+            clonedGrid.style.height = height + 'px';
+            clonedGrid.style.display = 'grid'; // 確保維持網格佈局
+        }
+    }).then(canvas => {
+        // 成功產圖後隱藏 Toast
+        document.getElementById('toast').style.display = 'none';
+
+        // 建立下載連結
+        const link = document.createElement('a');
+        link.download = 'hq_deck_full.png';
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+        
+        showToast("完整圖片下載成功！", 2000);
+    }).catch(err => {
+        console.error("產圖出錯:", err);
+        showToast("產圖失敗，請檢查權限或重試", 3000);
+    });
+}
 
     init();
 </script>
 </body>
 </html>
+
