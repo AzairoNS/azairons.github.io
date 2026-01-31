@@ -177,7 +177,7 @@
     // 3. 批量加入功能
     function showQtyControl(id) {
         selectedTempCard = allCards.find(c => c.ID === id);
-        document.getElementById('selectedInfo').innerText = `已選: ${selectedTempCard.卡名}`;
+        document.getElementById('selectedInfo').innerText = `已選: ${selectedTempCard.ID}`;
         document.getElementById('qtyControl').style.display = 'block';
     }
 
