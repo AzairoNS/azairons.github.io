@@ -10,7 +10,7 @@
         :root { --primary: #ff9800; --secondary: #4CAF50; --bg: #f0f2f5; }
         body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; display: flex; overflow: hidden; height: 100vh; flex-direction: row; }
 
-        /* 響應式佈局：手機版改為垂直排列 */
+        /* 響應式佈局 */
         @media (max-width: 768px) {
             body { flex-direction: column; overflow-y: auto; height: auto; }
             #sidebar { width: 100% !important; height: 50vh !important; border-right: none !important; border-bottom: 2px solid #ddd; }
@@ -18,87 +18,72 @@
             .deck-grid { grid-template-columns: repeat(4, 1fr) !important; }
         }
 
-        /* 側邊搜尋欄 */
+        /* 側邊搜尋與預覽 */
         #sidebar { width: 350px; height: 100vh; display: flex; flex-direction: column; background: white; border-right: 2px solid #ddd; flex-shrink: 0; }
-        .search-box { padding: 15px; background: #fff; z-index: 10; }
+        .search-box { padding: 15px; background: #fff; }
         #searchInput { width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        
-        #resultList { flex-grow: 1; overflow-y: auto; background: #fff; }
+        #resultList { flex-grow: 1; overflow-y: auto; }
         .card-item { padding: 12px; border-bottom: 1px solid #f9f9f9; cursor: pointer; font-size: 14px; }
         .card-item:hover { background: #fff3e0; }
 
-        /* 固定預覽區 */
-        .preview-panel { height: 220px; background: #fafafa; border-top: 1px solid #eee; display: flex; padding: 10px; gap: 10px; flex-shrink: 0; }
-        #previewImg { width: 120px; height: 170px; object-fit: cover; border-radius: 5px; background: #eee; flex-shrink: 0; }
+        /* 預覽面板 */
+        .preview-panel { height: 200px; background: #fafafa; border-top: 1px solid #eee; display: flex; padding: 10px; gap: 10px; flex-shrink: 0; }
+        #previewImg { width: 110px; height: 160px; object-fit: cover; border-radius: 5px; background: #eee; display: none; }
         .preview-info { flex-grow: 1; font-size: 13px; overflow-y: auto; }
 
-        /* 右側編隊區 */
+        /* 主編隊區 */
         #main { flex-grow: 1; display: flex; flex-direction: column; padding: 15px; height: 100vh; box-sizing: border-box; }
         .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
         button { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; font-size: 13px; }
         
-        .deck-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .deck-slot { aspect-ratio: 2/3; border: 1px dashed #ccc; border-radius: 4px; position: relative; background: #fdfdfd; }
+        .deck-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; background: white; padding: 10px; border-radius: 8px; }
+        .deck-slot { aspect-ratio: 2/3; border: 1px dashed #ccc; border-radius: 4px; position: relative; background: #fdfdfd; overflow: visible; }
         .deck-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 3px; }
-        .remove-btn { position: absolute; top: -5px; right: -5px; background: #ff4444; width: 18px; height: 18px; border-radius: 50%; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+        .remove-btn { position: absolute; top: -5px; right: -5px; background: #ff4444; color: white; width: 18px; height: 18px; border-radius: 50%; font-size: 12px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 5; }
 
-        /* 批量加入面板 */
+        /* 提示與彈窗 */
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; z-index: 9999; display: none; }
         #qtyControl { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); display: none; z-index: 100; text-align: center; }
-        #qtyControl input { width: 60px; padding: 8px; margin: 10px; font-size: 18px; text-align: center; }
-
-	/* 自動消失的提示框 */
-	.toast {
-	    position: fixed;
-	    top: 20px;
-	    left: 50%;
-	    transform: translateX(-50%);
-	    background: rgba(0, 0, 0, 0.8);
-	    color: white;
-	    padding: 12px 24px;
-	    border-radius: 30px;
-	    z-index: 9999;
-	    display: none; /* 預設隱藏 */
-	    font-size: 14px;
-	    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-	}
     </style>
 </head>
 <body>
-<div id="toast" class="toast">正在產生圖片，請稍候...</div>
+
+<div id="toast" class="toast"></div>
+
 <div id="sidebar">
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="🔍 搜尋名稱/技能/編號..." oninput="handleSearch()">
     </div>
     <div id="resultList"></div>
-    <div class="preview-panel" id="sidePreview">
-        <img id="previewImg" src="" style="display:none">
+    <div class="preview-panel">
+        <img id="previewImg" src="">
         <div class="preview-info">
-            <b id="prevName">請選取卡片</b><br>
+            <b id="prevName">請選取卡片</b><br><br>
             <span id="prevSkill" style="color:#666"></span>
         </div>
     </div>
 </div>
 
 <div id="main">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="margin:5px 0;">我的牌組 (<span id="deckCount">0</span>/40)</h3>
-    </div>
+    <h3 style="margin:5px 0;">我的牌組 (<span id="deckCount">0</span>/40)</h3>
     <div class="controls">
         <button style="background:#2196F3;" onclick="copyDeckCode()">複製代碼</button>
         <button style="background:#607d8b;" onclick="importDeckCode()">貼上代碼</button>
         <button style="background:var(--secondary);" onclick="exportDeck()">下載JSON</button>
+        <button style="background:#555;" onclick="document.getElementById('importFile').click()">讀取JSON</button>
         <button style="background:#9c27b0;" onclick="exportAsImage()">輸出圖片</button>
         <button style="background:#ff4444;" onclick="if(confirm('確定清空？')) { currentDeck=[]; updateDeckUI(); }">清空</button>
+        <input type="file" id="importFile" style="display:none" accept=".json" onchange="importDeck(event)">
     </div>
     <div class="deck-grid" id="deckGrid"></div>
 </div>
 
 <div id="qtyControl">
     <b id="qtyTitle"></b><br>
-    數量: <input type="number" id="cardQty" value="1" min="1" max="40">
+    數量: <input type="number" id="cardQty" value="1" min="1" max="40" style="width:60px; font-size:18px; margin:15px;">
     <br>
     <button onclick="addSelectedToDeck()" style="background:var(--secondary); padding:10px 20px;">確認加入</button>
-    <button onclick="document.getElementById('qtyControl').style.display='none'" style="background:#888;">取消</button>
+    <button onclick="document.getElementById('qtyControl').style.display='none'" style="background:#888; padding:10px 20px;">取消</button>
 </div>
 
 <script>
@@ -106,36 +91,32 @@
     let currentDeck = [];
     let selectedTempCard = null;
 
+    function showToast(msg, duration = 2000) {
+        const t = document.getElementById('toast');
+        t.innerText = msg; t.style.display = 'block';
+        if(duration > 0) setTimeout(() => t.style.display = 'none', duration);
+    }
+
     async function init() {
         const fetchCSV = (url) => new Promise(res => {
-            Papa.parse(url, { download: true, header: true, complete: r => res(r.data) });
+            Papa.parse(url, { download: true, header: true, skipEmptyLines: true, complete: r => res(r.data) });
         });
-        const chars = await fetchCSV('characters.csv');
-        const events = await fetchCSV('events.csv');
-        allCards = [...chars.map(c=>({...c, type:'角色'})), ...events.map(e=>({...e, type:'事件'}))];
-        renderResults(allCards.slice(0, 20)); // 預設顯示前20張
+        try {
+            const chars = await fetchCSV('characters.csv');
+            const events = await fetchCSV('events.csv');
+            allCards = [...chars.map(c=>({...c, type:'角色'})), ...events.map(e=>({...e, type:'事件'}))];
+            renderResults(allCards.slice(0, 20));
+        } catch(e) { showToast("CSV 讀取失敗，請檢查檔案名稱"); }
     }
 
     function handleSearch() {
         const kw = document.getElementById('searchInput').value.toLowerCase();
-        if(!kw) return renderResults(allCards.slice(0,20));
-        const filtered = allCards.filter(c => 
-            (c.ID && c.ID.toLowerCase().includes(kw)) || 
-            (c.卡名 && c.卡名.toLowerCase().includes(kw)) ||
-            (c.學校 && c.學校.toLowerCase().includes(kw)) ||
-            (c.年級 && c.年級.toLowerCase().includes(kw)) ||
-            (c.崗位 && c.崗位.toLowerCase().includes(kw)) ||
-            (c.技能發動位置 && c.技能發動位置.toLowerCase().includes(kw)) ||
-            (c.技能 && c.技能.toLowerCase().includes(kw)) ||
-            (c.常見稱呼 && c.常見稱呼.toLowerCase().includes(kw)) ||
-            (c.關鍵字 && c.關鍵字.toLowerCase().includes(kw)) 
-        );
-        renderResults(filtered);
+        const res = kw ? allCards.filter(c => Object.values(c).some(v => String(v).toLowerCase().includes(kw))) : allCards.slice(0,20);
+        renderResults(res);
     }
 
     function renderResults(results) {
-        const list = document.getElementById('resultList');
-        list.innerHTML = results.map(c => `
+        document.getElementById('resultList').innerHTML = results.map(c => `
             <div class="card-item" onclick="updatePreview('${c.ID}')">
                 [${c.type}] ${c.ID} ${c.卡名}
             </div>
@@ -147,21 +128,16 @@
         if(!c) return;
         selectedTempCard = c;
         const img = document.getElementById('previewImg');
-        img.src = c.圖片 || '';
-        img.style.display = 'block';
+        img.src = c.圖片 || ''; img.style.display = 'block';
         document.getElementById('prevName').innerText = `[${c.ID}] ${c.卡名}`;
         document.getElementById('prevSkill').innerText = c.技能 || '無技能描述';
-        
-        // 點擊第二次或點擊預覽區可觸發批量加入
         document.getElementById('qtyTitle').innerText = `[${c.ID}] ${c.卡名}`;
         document.getElementById('qtyControl').style.display = 'block';
     }
 
     function addSelectedToDeck() {
         const qty = parseInt(document.getElementById('cardQty').value);
-        for(let i=0; i<qty; i++) {
-            if(currentDeck.length < 40) currentDeck.push(selectedTempCard);
-        }
+        for(let i=0; i<qty; i++) if(currentDeck.length < 40) currentDeck.push(selectedTempCard);
         updateDeckUI();
         document.getElementById('qtyControl').style.display = 'none';
     }
@@ -170,89 +146,69 @@
         const grid = document.getElementById('deckGrid');
         document.getElementById('deckCount').innerText = currentDeck.length;
         grid.innerHTML = "";
-        // 補滿 40 格
         for(let i=0; i<40; i++) {
             const card = currentDeck[i];
             const slot = document.createElement('div');
             slot.className = 'deck-slot';
             if(card) {
-                slot.innerHTML = `<img src="${card.圖片}"><button class="remove-btn" onclick="removeFromDeck(${i})">×</button>`;
+                slot.innerHTML = `<img src="${card.圖片}" title="${card.卡名}"><button class="remove-btn" onclick="removeFromDeck(${i})">×</button>`;
             }
             grid.appendChild(slot);
         }
     }
 
-    function removeFromDeck(index) {
-        currentDeck.splice(index, 1);
-        updateDeckUI();
+    function removeFromDeck(index) { currentDeck.splice(index, 1); updateDeckUI(); }
+
+    // JSON 功能：僅存 ID
+    function exportDeck() {
+        if(!currentDeck.length) return alert("牌組為空");
+        const ids = currentDeck.map(c => c.ID);
+        const blob = new Blob([JSON.stringify(ids)], {type: "application/json"});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = "deck.json"; a.click();
     }
 
-    // 手機友善：複製文字代碼
+    function importDeck(event) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const ids = JSON.parse(e.target.result);
+                currentDeck = ids.map(id => allCards.find(c => c.ID === id)).filter(Boolean);
+                updateDeckUI();
+                showToast("JSON 導入成功");
+            } catch(err) { alert("無效的 JSON 檔案"); }
+        };
+        reader.readAsText(event.target.files[0]);
+        event.target.value = '';
+    }
+
     function copyDeckCode() {
-        if(currentDeck.length === 0) return alert("牌組是空的");
-        const code = currentDeck.map(c => c.ID).join(',');
-        navigator.clipboard.writeText(code).then(() => alert("代碼已複製到剪貼簿！"));
+        if(!currentDeck.length) return;
+        navigator.clipboard.writeText(currentDeck.map(c=>c.ID).join(',')).then(()=>showToast("代碼已複製"));
     }
 
     function importDeckCode() {
-        const code = prompt("請貼上牌組代碼 (ID以逗號隔開):");
-        if(!code) return;
-        const ids = code.split(',');
-        currentDeck = ids.map(id => allCards.find(c => c.ID.trim() === id.trim())).filter(Boolean);
-        updateDeckUI();
+        const code = prompt("貼上代碼 (ID用逗號隔開):");
+        if(code) {
+            currentDeck = code.split(/[, ]+/).map(id => allCards.find(c => c.ID.trim() === id.trim())).filter(Boolean);
+            updateDeckUI();
+        }
     }
 
-    function exportDeck() {
-        const blob = new Blob([JSON.stringify(currentDeck)], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = "hq_deck.json"; a.click();
+    function exportAsImage() {
+        showToast("正在產生圖片...", 0);
+        const grid = document.getElementById('deckGrid');
+        const timeout = setTimeout(() => { document.getElementById('toast').style.display='none'; alert("產圖超時，請檢查圖片網址或長按圖片儲存"); }, 10000);
+
+        html2canvas(grid, { useCORS: true, scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+            clearTimeout(timeout);
+            const a = document.createElement('a');
+            a.download = 'hq_deck.png'; a.href = canvas.toDataURL("image/png"); a.click();
+            showToast("圖片下載完成");
+        }).catch(() => { clearTimeout(timeout); showToast("產圖失敗"); });
     }
-
-	// 顯示提示訊息的工具函式
-	function showToast(message, duration = 2000) {
-	    const toast = document.getElementById('toast');
-	    toast.innerText = message;
-	    toast.style.display = 'block';
-    
-  	  // 如果 duration 為 0，代表不自動關閉 (等待手動關閉)
-	    if (duration > 0) {
-      	  	setTimeout(() => {
-       	     	toast.style.display = 'none';
-    	    }, duration);
-    	  }
-	}
-
-	function exportAsImage() {
-    		// 1. 顯示「處理中」但不自動關閉
-    		showToast("正在產生圖片，請稍候...", 0);
-
-    		const grid = document.getElementById('deckGrid');
-    
-    		// 使用 requestAnimationFrame 確保提示框已經渲染出來
-    		requestAnimationFrame(() => {
-        		html2canvas(grid, { 
-           		useCORS: true, 
-            		scale: 2,
-            		backgroundColor: "#ffffff" // 確保背景是白色
-        		}).then(canvas => {
-            		const link = document.createElement('a');
-            		link.download = 'my_hq_deck.png';
-            		link.href = canvas.toDataURL("image/png");
-            		link.click();
-
-            	// 2. 下載觸發後，將提示改為「完成」並在 2 秒後消失
-            		showToast("圖片下載完成！");
-        		}).catch(err => {
-            			console.error(err);
-            		showToast("圖片產生失敗，請重試");
-        		});
-    		});
-	}
 
     init();
-    updateDeckUI();
 </script>
-
 </body>
 </html>
