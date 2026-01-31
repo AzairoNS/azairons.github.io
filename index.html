@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HQ 排球少年卡牌編隊器</title>
+    <style>
+        :root { --primary: #ff9800; --secondary: #4CAF50; --bg: #f8f9fa; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; }
+        
+        /* 側邊搜尋欄 */
+        #sidebar { width: 350px; border-right: 2px solid #ddd; display: flex; flex-direction: column; background: white; }
+        .search-box { padding: 15px; border-bottom: 1px solid #eee; }
+        #searchInput { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        #resultList { flex: 1; overflow-y: auto; }
+        .card-item { padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
+        .card-item:hover { background: #fff3e0; }
+        
+        /* 右側編隊區 */
+        #main { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+        .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .deck-slot { aspect-ratio: 2/3; border: 2px dashed #ccc; border-radius: 8px; position: relative; display: flex; align-items: center; justify-content: center; background: #eee; }
+        .deck-slot img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+        .remove-btn { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; cursor: pointer; border: none; width: 20px; height: 20px; font-size: 12px; }
+
+        /* 控制按鈕 */
+        .controls { background: white; padding: 15px; border-top: 1px solid #ddd; display: flex; gap: 10px; }
+        button { padding: 10px 15px; border-radius: 5px; border: none; cursor: pointer; color: white; font-weight: bold; }
+        .btn-save { background: var(--secondary); }
+        .btn-load { background: #2196F3; }
+        .btn-export-img { background: #9c27b0; }
+
+        /* 批量加入彈窗樣式 */
+        #qtyControl { position: fixed; bottom: 20px; left: 20px; background: white; padding: 15px; border: 2px solid var(--primary); border-radius: 10px; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 搜尋名稱、技能、編號..." oninput="handleSearch()">
+    </div>
+    <div id="resultList"></div>
+</div>
+
+<div id="main">
+    <h2>我的卡組 (<span id="deckCount">0</span>/40)</h2>
+    <div class="controls">
+        <button class="btn-save" onclick="exportDeck()">輸出 JSON</button>
+        <button class="btn-load" onclick="document.getElementById('importFile').click()">導入 JSON</button>
+        <button class="btn-export-img" onclick="exportAsImage()">輸出圖片 (非必要功能)</button>
+        <input type="file" id="importFile" style="display:none" onchange="importDeck(event)">
+    </div>
+    <div class="deck-grid" id="deckGrid"></div>
+</div>
+
+<div id="qtyControl">
+    <div id="selectedInfo" style="font-weight:bold; margin-bottom:10px;"></div>
+    數量: <input type="number" id="cardQty" value="1" min="1" max="40" style="width:50px">
+    <button onclick="addSelectedToDeck()" style="background:var(--secondary)">加入</button>
+    <button onclick="hideQtyControl()" style="background:#888">取消</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+<script>
+    let allCards = [];
+    let currentDeck = [];
+    let selectedTempCard = null;
+
+    // 1. 初始化讀取 CSV 資料 (GitHub Pages 環境)
+    async function loadCSVData() {
+        const fetchCSV = (url) => new Promise(resolve => {
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                complete: results => resolve(results.data)
+            });
+        });
+
+        const charData = await fetchCSV('characters.csv'); // 請確保檔案存在
+        const eventData = await fetchCSV('events.csv');
+        
+        allCards = [
+            ...charData.map(c => ({...c, type: '角色'})),
+            ...eventData.map(e => ({...e, type: '事件'}))
+        ];
+        console.log("資料讀取完成", allCards.length, "張卡片");
+    }
+
+    // 2. 搜尋功能
+    function handleSearch() {
+        const kw = document.getElementById('searchInput').value.toLowerCase();
+        const results = allCards.filter(c => 
+            (c.ID && c.ID.toLowerCase().includes(kw)) || 
+            (c.名稱 && c.名稱.toLowerCase().includes(kw)) ||
+            (c.技能 && c.技能.toLowerCase().includes(kw))
+        );
+        renderResults(results);
+    }
+
+    function renderResults(results) {
+        const listDiv = document.getElementById('resultList');
+        listDiv.innerHTML = results.map(item => `
+            <div class="card-item" onclick="showQtyControl('${item.ID}')">
+                [${item.type}] ${item.ID} ${item.名稱}
+            </div>
+        `).join('');
+    }
+
+    // 3. 批量加入功能
+    function showQtyControl(id) {
+        selectedTempCard = allCards.find(c => c.ID === id);
+        document.getElementById('selectedInfo').innerText = `已選: ${selectedTempCard.名稱}`;
+        document.getElementById('qtyControl').style.display = 'block';
+    }
+
+    function hideQtyControl() {
+        document.getElementById('qtyControl').style.display = 'none';
+    }
+
+    function addSelectedToDeck() {
+        const qty = parseInt(document.getElementById('cardQty').value);
+        for(let i=0; i<qty; i++) {
+            if(currentDeck.length < 40) {
+                currentDeck.push(selectedTempCard);
+            }
+        }
+        updateDeckUI();
+        hideQtyControl();
+    }
+
+    // 4. 更新卡組 UI
+    function updateDeckUI() {
+        const grid = document.getElementById('deckGrid');
+        document.getElementById('deckCount').innerText = currentDeck.length;
+        grid.innerHTML = currentDeck.map((card, index) => `
+            <div class="deck-slot">
+                <img src="${card.圖片URL || ''}" onerror="this.src='https://via.placeholder.com/100x150?text=No+Img'">
+                <button class="remove-btn" onclick="removeFromDeck(${index})">×</button>
+            </div>
+        `).join('');
+    }
+
+    function removeFromDeck(index) {
+        currentDeck.splice(index, 1);
+        updateDeckUI();
+    }
+
+    // 5. 輸出/輸入 JSON (Save/Load)
+    function exportDeck() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentDeck));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "hq_deck.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    function importDeck(event) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentDeck = JSON.parse(e.target.result);
+            updateDeckUI();
+        };
+        reader.readAsText(event.target.files[0]);
+    }
+
+    // 初始化
+    loadCSVData();
+</script>
+</body>
+</html>
