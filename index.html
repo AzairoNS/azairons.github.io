@@ -108,7 +108,7 @@
         const listDiv = document.getElementById('resultList');
         listDiv.innerHTML = results.map(item => `
             <div class="card-item" onclick="showQtyControl('${item.ID}')">
-                [${item.type}] ${item.ID} ${item.人名}
+                [${item.type}] ${item.ID} ${item.卡名}
             </div>
         `).join('');
     }
@@ -141,7 +141,7 @@
         document.getElementById('deckCount').innerText = currentDeck.length;
         grid.innerHTML = currentDeck.map((card, index) => `
             <div class="deck-slot">
-                <img src="${card.圖片URL || ''}" onerror="this.src='https://via.placeholder.com/100x150?text=No+Img'">
+                <img src="${card.圖片 || ''}" onerror="this.src='https://via.placeholder.com/100x150?text=No+Img'">
                 <button class="remove-btn" onclick="removeFromDeck(${index})">×</button>
             </div>
         `).join('');
