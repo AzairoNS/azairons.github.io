@@ -48,7 +48,7 @@
     <div class="controls">
         <button class="btn-save" onclick="exportDeck()">輸出 JSON</button>
         <button class="btn-load" onclick="document.getElementById('importFile').click()">導入 JSON</button>
-        <button class="btn-export-img" onclick="exportAsImage()">輸出圖片 (非必要功能)</button>
+        <button class="btn-export-img" onclick="exportAsImage()">輸出圖片</button>
         <input type="file" id="importFile" style="display:none" onchange="importDeck(event)">
     </div>
     <div class="deck-grid" id="deckGrid"></div>
@@ -116,7 +116,7 @@
     // 3. 批量加入功能
     function showQtyControl(id) {
         selectedTempCard = allCards.find(c => c.ID === id);
-        document.getElementById('selectedInfo').innerText = `已選: ${selectedTempCard.名稱}`;
+        document.getElementById('selectedInfo').innerText = `已選: ${selectedTempCard.卡名}`;
         document.getElementById('qtyControl').style.display = 'block';
     }
 
