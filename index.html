@@ -92,8 +92,14 @@
         const kw = document.getElementById('searchInput').value.toLowerCase();
         const results = allCards.filter(c => 
             (c.ID && c.ID.toLowerCase().includes(kw)) || 
-            (c.名稱 && c.名稱.toLowerCase().includes(kw)) ||
-            (c.技能 && c.技能.toLowerCase().includes(kw))
+            (c.卡名 && c.卡名.toLowerCase().includes(kw)) ||
+            (c.學校 && c.學校.toLowerCase().includes(kw)) ||
+            (c.年級 && c.年級.toLowerCase().includes(kw)) ||
+            (c.崗位 && c.崗位.toLowerCase().includes(kw)) ||
+            (c.技能發動位置 && c.技能發動位置.toLowerCase().includes(kw)) ||
+            (c.技能 && c.技能.toLowerCase().includes(kw)) ||
+            (c.常見稱呼 && c.常見稱呼.toLowerCase().includes(kw)) ||
+            (c.關鍵字 && c.關鍵字.toLowerCase().includes(kw)) 
         );
         renderResults(results);
     }
@@ -102,7 +108,7 @@
         const listDiv = document.getElementById('resultList');
         listDiv.innerHTML = results.map(item => `
             <div class="card-item" onclick="showQtyControl('${item.ID}')">
-                [${item.type}] ${item.ID} ${item.名稱}
+                [${item.type}] ${item.ID} ${item.人名}
             </div>
         `).join('');
     }
