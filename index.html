@@ -8,13 +8,51 @@
         :root { --primary: #ff9800; --secondary: #4CAF50; --bg: #f8f9fa; }
         body { font-family: 'Microsoft JhengHei', sans-serif; background: var(--bg); margin: 0; display: flex; height: 100vh; }
         
-        /* 側邊搜尋欄 */
-        #sidebar { width: 350px; border-right: 2px solid #ddd; display: flex; flex-direction: column; background: white; }
-        .search-box { padding: 15px; border-bottom: 1px solid #eee; }
-        #searchInput { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #resultList { flex: 1; overflow-y: auto; }
-        .card-item { padding: 10px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: 0.2s; }
-        .card-item:hover { background: #fff3e0; }
+        /* 側邊欄改為 Flex 佈局，填滿高度 */
+	#sidebar { 
+	    width: 350px; 
+	    height: 100vh; /* 鎖定為視窗高度 */
+	    border-right: 2px solid #ddd; 
+	    display: flex; 
+	    flex-direction: column; 
+	    background: white; 
+	    position: sticky;
+	    top: 0;
+	}
+
+	/* 搜尋結果區：設為自動滾動，並佔據剩餘空間 */
+	#resultList { 
+	    flex-grow: 1; /* 自動填滿中間剩餘空間 */
+	    overflow-y: auto; 
+	    border-bottom: 1px solid #eee;
+	}
+
+	/* 固定預覽區在側邊欄的最下方 */
+	.preview-panel {
+	    height: 300px; /* 固定高度，不被搜尋結果擠壓 */
+	    background: #f9f9f9;
+	    display: flex;
+	    flex-direction: column;
+	    align-items: center;
+	    justify-content: center;
+	    padding: 10px;
+	    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+	}
+
+	.preview-panel img {
+	    max-height: 200px;
+	    max-width: 100%;
+	    object-fit: contain;
+	    border-radius: 4px;
+	}
+
+	.preview-skill {
+	    font-size: 12px;
+	    color: #666;
+	    margin-top: 8px;
+	    width: 100%;
+	    overflow-y: auto;
+	}
         
         /* 右側編隊區 */
         #main { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
@@ -38,9 +76,17 @@
 
 <div id="sidebar">
     <div class="search-box">
-        <input type="text" id="searchInput" placeholder="🔍 搜尋名稱、技能、編號..." oninput="handleSearch()">
+        <input type="text" id="searchInput" placeholder="🔍 搜尋..." oninput="handleSearch()">
     </div>
+    
     <div id="resultList"></div>
+
+    <div class="preview-panel" id="sidePreview">
+        <div id="previewImgContainer">
+            <span style="color:#ccc;">選取卡片以預覽</span>
+        </div>
+        <div id="previewSkillText" class="preview-skill"></div>
+    </div>
 </div>
 
 <div id="main">
@@ -105,12 +151,27 @@
     }
 
     function renderResults(results) {
-        const listDiv = document.getElementById('resultList');
-        listDiv.innerHTML = results.map(item => `
-            <div class="card-item" onclick="showQtyControl('${item.ID}')">
-                [${item.type}] ${item.ID} ${item.卡名}
-            </div>
-        `).join('');
+	    const listDiv = document.getElementById('resultList');
+	    listDiv.innerHTML = results.map(item => `
+        	<div class="card-item" onclick="updatePreview('${item.ID}')">
+            	[${item.type}] ${item.ID} ${item.卡名}
+        	</div>
+    	`).join('');
+	}
+
+    function updatePreview(id) {
+	    const card = allCards.find(c => c.ID === id);
+    	    if (!card) return;
+    
+    	    // 更新圖片
+    	    document.getElementById('previewImgContainer').innerHTML = 
+        	`<img src="${card.圖片}" onerror="this.src='https://via.placeholder.com/150x200?text=No+Image'">`;
+    
+    		// 更新技能描述
+    		document.getElementById('previewSkillText').innerText = card.技能 || "無技能描述";
+    
+    		// 同步更新批量加入時的選取目標
+    		selectedTempCard = card;
     }
 
     // 3. 批量加入功能
