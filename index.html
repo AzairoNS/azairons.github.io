@@ -196,52 +196,58 @@
     }
 
 function exportAsImage() {
-    showToast("正在產生完整圖片...", 0);
+    showToast("正在產生圖片，請稍候...", 0);
     const grid = document.getElementById('deckGrid');
 
-    // 1. 取得物件實際的總寬度與總高度 (不受螢幕限制)
-    const width = grid.scrollWidth;
-    const height = grid.scrollHeight;
+    // 1. 強制讓頁面回到最頂端，避免捲軸位移干擾擷取
+    window.scrollTo(0, 0);
 
-    // 2. 使用更嚴謹的參數執行 html2canvas
+    // 2. 取得精確的尺寸
+    const rect = grid.getBoundingClientRect();
+    const width = grid.offsetWidth;
+    const height = grid.offsetHeight;
+
     html2canvas(grid, {
         useCORS: true,
-        scale: 2,           // 保持高解析度
+        scale: 2,
         backgroundColor: "#ffffff",
-        width: width,       // 強制設定擷取寬度為物件總寬
-        height: height,     // 強制設定擷取高度為物件總高
-        windowWidth: width, // 模擬視窗寬度
-        windowHeight: height, // 模擬視窗高度
-        x: 0,               // 從左上角座標 0 開始
+        // 關鍵修正：人為增加擷取範圍，多給 20 像素的緩衝空間
+        width: width + 20,
+        height: height + 40, 
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight,
+        x: 0,
         y: 0,
         scrollX: 0,
-        scrollY: 0,
+        scrollY: -window.scrollY, // 補償捲動位移
         onclone: (clonedDoc) => {
-            // 在複製品中確保 grid 是展開的，防止被 CSS 限制
             const clonedGrid = clonedDoc.getElementById('deckGrid');
-            clonedGrid.style.width = width + 'px';
-            clonedGrid.style.height = height + 'px';
-            clonedGrid.style.display = 'grid'; // 確保維持網格佈局
+            // 在複製的 DOM 中強制加上底部內距，撐開空間
+            clonedGrid.style.paddingBottom = "30px";
+            clonedGrid.style.marginBottom = "0px";
+            clonedGrid.style.height = "auto";
+            
+            // 確保所有圖片在複製後的 DOM 中是可見的
+            const imgs = clonedGrid.getElementsByTagName('img');
+            for (let img of imgs) {
+                img.style.display = "block";
+            }
         }
     }).then(canvas => {
-        // 成功產圖後隱藏 Toast
         document.getElementById('toast').style.display = 'none';
-
-        // 建立下載連結
-        const link = document.createElement('a');
-        link.download = 'hq_deck_full.png';
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-        
-        showToast("完整圖片下載成功！", 2000);
+        const a = document.createElement('a');
+        a.download = 'hq_deck_full.png';
+        a.href = canvas.toDataURL("image/png");
+        a.click();
+        showToast("圖片下載完成！", 2000);
     }).catch(err => {
-        console.error("產圖出錯:", err);
-        showToast("產圖失敗，請檢查權限或重試", 3000);
+        console.error(err);
+        showToast("產圖失敗，請重試", 3000);
     });
 }
-
     init();
 </script>
 </body>
 </html>
+
 
