@@ -45,10 +45,26 @@
         /* 批量加入面板 */
         #qtyControl { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 12px; box-shadow: 0 5px 30px rgba(0,0,0,0.3); display: none; z-index: 100; text-align: center; }
         #qtyControl input { width: 60px; padding: 8px; margin: 10px; font-size: 18px; text-align: center; }
+
+	/* 自動消失的提示框 */
+	.toast {
+	    position: fixed;
+	    top: 20px;
+	    left: 50%;
+	    transform: translateX(-50%);
+	    background: rgba(0, 0, 0, 0.8);
+	    color: white;
+	    padding: 12px 24px;
+	    border-radius: 30px;
+	    z-index: 9999;
+	    display: none; /* 預設隱藏 */
+	    font-size: 14px;
+	    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+	}
     </style>
 </head>
 <body>
-
+<div id="toast" class="toast">正在產生圖片，請稍候...</div>
 <div id="sidebar">
     <div class="search-box">
         <input type="text" id="searchInput" placeholder="🔍 搜尋名稱/技能/編號..." oninput="handleSearch()">
@@ -193,18 +209,50 @@
         a.href = url; a.download = "hq_deck.json"; a.click();
     }
 
-    function exportAsImage() {
-        alert("正在產生圖片，請稍候...");
-        html2canvas(document.getElementById('deckGrid'), { useCORS: true, scale: 2 }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = 'my_hq_deck.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
-    }
+	// 顯示提示訊息的工具函式
+	function showToast(message, duration = 2000) {
+	    const toast = document.getElementById('toast');
+	    toast.innerText = message;
+	    toast.style.display = 'block';
+    
+  	  // 如果 duration 為 0，代表不自動關閉 (等待手動關閉)
+	    if (duration > 0) {
+      	  	setTimeout(() => {
+       	     	toast.style.display = 'none';
+    	    }, duration);
+    	  }
+	}
+
+	function exportAsImage() {
+    		// 1. 顯示「處理中」但不自動關閉
+    		showToast("正在產生圖片，請稍候...", 0);
+
+    		const grid = document.getElementById('deckGrid');
+    
+    		// 使用 requestAnimationFrame 確保提示框已經渲染出來
+    		requestAnimationFrame(() => {
+        		html2canvas(grid, { 
+           		useCORS: true, 
+            		scale: 2,
+            		backgroundColor: "#ffffff" // 確保背景是白色
+        		}).then(canvas => {
+            		const link = document.createElement('a');
+            		link.download = 'my_hq_deck.png';
+            		link.href = canvas.toDataURL("image/png");
+            		link.click();
+
+            	// 2. 下載觸發後，將提示改為「完成」並在 2 秒後消失
+            		showToast("圖片下載完成！");
+        		}).catch(err => {
+            			console.error(err);
+            		showToast("圖片產生失敗，請重試");
+        		});
+    		});
+	}
 
     init();
     updateDeckUI();
 </script>
+
 </body>
 </html>
